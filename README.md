@@ -1,0 +1,1 @@
+initialize project structure with essential configuration files
