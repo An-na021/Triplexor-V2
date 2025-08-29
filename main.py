@@ -1,82 +1,71 @@
-from pybricks.hubs import EV3Brick
-from pybricks.ev3devices import (Motor, ColorSensor,
-                                 InfraredSensor)
-from pybricks.parameters import Port, Stop
-from pybricks.tools import wait
-from pybricks.robotics import DriveBase
-from pybricks.media.ev3dev import SoundFile, ImageFile
+#!/usr/bin/env python3
+from ev3dev2.motor import LargeMotor, OUTPUT_A, OUTPUT_B, MoveTank
+from ev3dev2.sensor.lego import ColorSensor, InfraredSensor
+from ev3dev2.sensor import INPUT_1, INPUT_4
+from ev3dev2.display import Display
+from time import sleep
 
+# Motores e display
+motor_esquerdo = LargeMotor(OUTPUT_A)
+motor_direito = LargeMotor(OUTPUT_B)
+robot = MoveTank(OUTPUT_A, OUTPUT_B)
+display = Display()
 
-ev3 = EV3Brick()
+# Sensores
+sensor_cor = ColorSensor(INPUT_4)
+sensor_infravermelho = InfraredSensor(INPUT_1)
 
-motor_esquerdo = Motor(Port.A)
-motor_direito = Motor(Port.B)
-
-# Sensor de cor e infravermelho
-sensor_cor = ColorSensor(Port.S2)
-sensor_infravermelho = InfraredSensor(Port.S1)
-
-# Configurar a base de direção (drive base) com distância entre rodas e diâmetro.
-robot = DriveBase(motor_esquerdo, motor_direito, wheel_diameter=56, axle_track=120)
-
-# Parâmetros
-WHITE_THRESHOLD = 50  # Valor para detectar a borda (ajustar conforme seu ringue)
-ATTACK_SPEED = 500    # Velocidade de ataque mais alta para agressividade
-SEARCH_SPEED = 250    # Velocidade de busca
-RETREAT_SPEED = -250  # Velocidade de recuo
-TURN_RATE = 150       # Taxa de giro para a busca
+# Parâmetros (0–100)
+WHITE_THRESHOLD = 50   # Ajuste conforme a iluminação do dojo
+ATTACK_SPEED = 80      # Velocidade de ataque (%)
+SEARCH_SPEED = 40      # Velocidade de busca (%)
+RETREAT_SPEED = -60    # Velocidade de recuo (%)
 
 def detectar_borda():
     """
-    Usa a intensidade de luz refletida para detectar a borda branca.
-    Retorna True se a leitura for maior que o limite.
+    Retorna True se a cor refletida for maior que o limite (borda branca).
     """
-    return sensor_cor.reflection() > WHITE_THRESHOLD
+    return sensor_cor.reflected_light_intensity > WHITE_THRESHOLD
 
 def detectar_oponente():
     """
-    Detecta se o oponente está dentro da distância de ataque usando o sensor de infravermelho.
-    Inclui uma verificação para evitar erros quando o sensor não detecta nada.
+    Detecta se o oponente está próximo com o sensor infravermelho.
+    .proximity retorna de 0 (muito perto) a 100 (longe).
     """
-    distance = sensor_infravermelho.distance()
-    return distance is not None and distance < 30
+    return sensor_infravermelho.proximity < 30
 
 def recuar_e_girar_aleatorio():
     """
-    Recua da borda do ringue e gira em um ângulo aleatório para evitar
-    ser empurrado para fora e para tornar o movimento menos previsível.
+    Recuar quando detectar a borda.
     """
-    ev3.screen.print("Borda detectada! Recuando...")
+    display.text_pixels("Borda detectada! Recuando...", x=10, y=60, clear_screen=True)
+    display.update()
     
-    # Recua rapidamente por um curto período de tempo e para
-    robot.drive_time(RETREAT_SPEED, 0, 400, then=Stop.BRAKE)
-    wait(100) # Espera um pouco para garantir que parou
+    # Recuar por 0.4s
+    robot.on_for_seconds(RETREAT_SPEED, RETREAT_SPEED, 0.4)
+    sleep(0.1)
 
 def atacar():
     """
-    Move o robô para frente em alta velocidade para empurrar o oponente.
+    Avançar em alta velocidade para empurrar o oponente.
     """
-    ev3.screen.print("Oponente detectado! Atacando...")
-    robot.drive(ATTACK_SPEED, 0)
-    
+    display.text_pixels("Oponente detectado! Atacando...", x=10, y=60, clear_screen=True)
+    display.update()
+    robot.on(ATTACK_SPEED, ATTACK_SPEED)
+
 def procurar_oponente():
     """
-    Gira suavemente enquanto avança para cobrir uma área maior
-    do ringue em busca do oponente.
+    Movimento de busca: gira levemente para cobrir área.
     """
-    ev3.screen.print("Procurando...")
-    # Gira suavemente para a direita enquanto avança
-    robot.drive(SEARCH_SPEED, TURN_RATE)
+    display.text_pixels("Procurando...", x=10, y=60, clear_screen=True)
+    display.update()
+    robot.on(SEARCH_SPEED, int(SEARCH_SPEED/2))
 
 # Loop principal
 while True:
-    # A ordem dos "if/elif" é crucial para a lógica do robô
     if detectar_borda():
-        # Se a borda for detectada, o robô deve recuar imediatamente
         recuar_e_girar_aleatorio()
     elif detectar_oponente():
-        # Se o oponente for detectado, o robô deve atacar
         atacar()
     else:
-        # Se nenhuma das condições for verdadeira, o robô procura
         procurar_oponente()
