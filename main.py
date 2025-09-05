@@ -17,9 +17,9 @@ sensor_infravermelho = InfraredSensor(INPUT_1)
 
 # Parâmetros (0–100)
 WHITE_THRESHOLD = 50   # Ajuste conforme a iluminação do dojo
-ATTACK_SPEED = 80      # Velocidade de ataque (%)
-SEARCH_SPEED = 40      # Velocidade de busca (%)
-RETREAT_SPEED = -60    # Velocidade de recuo (%)
+ATTACK_SPEED = 200      # Velocidade de ataque (%)
+SEARCH_SPEED = 80      # Velocidade de busca (%)
+RETREAT_SPEED = -70    # Velocidade de recuo (%)
 
 def detectar_borda():
     """
@@ -42,25 +42,24 @@ def recuar_e_girar_aleatorio():
     display.update()
     
     # Recuar por 0.4s
-    robot.on_for_seconds(RETREAT_SPEED, RETREAT_SPEED, 0.4)
+    robot.on_for_seconds(-RETREAT_SPEED, -RETREAT_SPEED, 0.4)
     sleep(0.1)
 
 def atacar():
     """
     Avançar em alta velocidade para empurrar o oponente.
     """
-    display.text_pixels("Oponente detectado! Atacando...", x=10, y=60, clear_screen=True)
+    display.text_pixels("Oponente detectado! Atacando...", x=60, y=10, clear_screen=True)
     display.update()
-    robot.on(ATTACK_SPEED, ATTACK_SPEED)
+    robot.on(-ATTACK_SPEED, -ATTACK_SPEED)
 
 def procurar_oponente():
     """
     Movimento de busca: gira levemente para cobrir área.
     """
-    display.text_pixels("Procurando...", x=10, y=60, clear_screen=True)
+    display.text_pixels("Procurando...", x=60, y=10, clear_screen=True)
     display.update()
-    robot.on(SEARCH_SPEED, int(SEARCH_SPEED/2))
-
+    robot.on(-SEARCH_SPEED, SEARCH_SPEED)
 # Loop principal
 while True:
     if detectar_borda():
